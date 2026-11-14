@@ -1,5 +1,5 @@
 ﻿# ==========================================================
-#  은밀한 청소기 v1.4 — 은밀한 광고를 청소해 주는 은밀한 청소기
+#  은밀한 청소기 v1.5 — 은밀한 광고를 청소해 주는 은밀한 청소기
 #  (옛 이름: 쇼핑 광고 바로가기 청소기)
 #  재부팅할 때마다 즐겨찾기/바로가기에 생기는 쿠팡·지마켓·마켓컬리 등
 #  광고 링크를 찾아서 지우고, 그걸 만드는 원인 프로그램까지 정리합니다.
@@ -18,11 +18,11 @@ param(
     [switch]$DisableAuto    # 자동 청소 끄기
 )
 
-$Version = '1.4'
+$Version = '1.5'
 
 # ===== 온라인 광고 목록 주소 (비워 두면 사용 안 함) =====
 # patterns.txt 와 같은 형식의 텍스트 파일 주소. 여기 목록을 고치면 공유한 모든 사람에게 반영됩니다.
-$RemoteListUrl = ''
+$RemoteListUrl = 'https://raw.githubusercontent.com/dddffd123/ad-shortcut-cleaner/main/online-list.txt'
 
 Remove-TypeData System.Array -ErrorAction SilentlyContinue   # PS 5.1 JSON 배열 버그 방지
 if (-not $Auto) {
@@ -129,8 +129,8 @@ function Load-Patterns {
         try {
             [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
             $r = Invoke-WebRequest -Uri $RemoteListUrl -UseBasicParsing -TimeoutSec 8 -ErrorAction Stop
-            $txt = [Text.Encoding]::UTF8.GetString($r.RawContentStream.ToArray())
-            if ($txt -match '\[(ad|shop|official)\]') { Write-Utf8 $cache $txt; $script:RemoteStatus = '최신 목록 받음' }
+            $txt = [Text.Encoding]::UTF8.GetString($r.RawContentStream.ToArray()).TrimStart([char]0xFEFF)
+            if ($txt -match '(?m)^\s*\[(ad|shop|official)\]') { Write-Utf8 $cache $txt; $script:RemoteStatus = '최신 목록 받음' }
             else { $script:RemoteStatus = '받은 내용이 목록 형식이 아님 — 저장된 목록 사용' }
         } catch { $script:RemoteStatus = '받기 실패(인터넷 확인) — 저장된 목록 사용' }
         if (Test-Path -LiteralPath $cache) { Add-Patterns ([IO.File]::ReadAllText($cache, [Text.Encoding]::UTF8)) '온라인' }
